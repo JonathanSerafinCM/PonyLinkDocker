@@ -1,20 +1,120 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
+use App\Models\UserProfileView;
+use App\Http\Controllers\ExperienciaLaboralController;
+use App\Http\Controllers\EducacionController;
+use App\Http\Controllers\FeedController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
 });
 
-require __DIR__.'/auth.php';
+// Rutas protegidas con mensaje personalizado
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+    Route::get('/editar-perfil', [UserController::class, 'editarPerfil'])
+        ->name('editar-perfil')
+        ->middleware('auth');
+        
+    // Agregando la ruta POST para editar el perfil
+    Route::post('/editar-perfil', [UserController::class, 'updateProfile'])
+        ->name('editar-perfil.update');
+
+    Route::post('/user/update-profile', [UserController::class, 'updateProfile'])
+        ->name('user.update-profile');
+    
+    // Rutas para formación académica
+    Route::post('/education', [EducacionController::class, 'store'])
+        ->name('education.store');
+    Route::post('/education/update/{id}', [EducacionController::class, 'update'])
+        ->name('education.update');
+    Route::delete('/education/{id}', [EducacionController::class, 'deleteEducation'])
+        ->name('education.delete');
+    Route::get('/education/{id}', [EducacionController::class, 'getEducation'])
+        ->name('education.show');
+    
+    // Rutas para habilidades
+    Route::post('/soft-skills', [UserController::class, 'storeSoftSkill'])
+        ->name('soft-skills.store');
+    Route::post('/hard-skills', [UserController::class, 'storeHardSkill'])
+        ->name('hard-skills.store');
+    Route::delete('/skills/{id}', [UserController::class, 'deleteSkill'])
+        ->name('skills.delete');
+    
+    // Rutas para idiomas
+    Route::post('/languages', [UserController::class, 'storeLanguage'])
+        ->name('languages.store');
+    Route::put('/languages/{id}', [UserController::class, 'updateLanguage'])
+        ->name('languages.update');
+    Route::delete('/languages/{id}', [UserController::class, 'deleteLanguage'])
+        ->name('languages.delete');
+    
+    // Rutas para proyectos
+    Route::post('/personal-projects', [UserController::class, 'storePersonalProject'])
+        ->name('personal-projects.store');
+    Route::post('/academic-projects', [UserController::class, 'storeAcademicProject'])
+        ->name('academic-projects.store');
+    Route::put('/projects/{id}', [UserController::class, 'updateProject'])
+        ->name('projects.update');
+    Route::delete('/projects/{id}', [UserController::class, 'deleteProject'])
+        ->name('projects.delete');
+
+    Route::get('/feed', [FeedController::class, 'index'])->name('feed');
+});
+
+// Rutas públicas
+Route::get('login', [LoginController::class, 'showLoginForm'])
+    ->name('login');
+Route::post('login', [LoginController::class, 'login']);
+Route::get('registro', [RegisterController::class, 'showRegisterForm'])->name('registro');
+Route::post('registro', [RegisterController::class, 'register']);
+Route::get('/navbar', function () {
+    return view('navbar');
+});
+Route::get('/editPassword', function () {
+    return view('editPassword');
+});
+
+// Remove this route
+// Route::get('/profile', [UserController::class, 'personalInfo'])->name('profile')->middleware('auth');
+
+// Keep this route
+Route::get('/profile', [ProfileController::class, 'show'])
+    ->name('profile.show')
+    ->middleware('auth');
+
+Route::put('/profile/sobre-mi', [ProfileController::class, 'updateSobreMi'])->name('profile.updateSobreMi');
+// Rutas para experiencia laboral
+Route::get('/experience/{id}', [ExperienciaLaboralController::class, 'getWorkExperience'])->name('experience.show');
+Route::post('/experience', [ExperienciaLaboralController::class, 'handleExperience'])->name('experience.store');
+Route::put('/experience/{id}', [ExperienciaLaboralController::class, 'updateWorkExperience'])->name('experience.update');
+Route::delete('/experience/{id}', [ExperienciaLaboralController::class, 'deleteWorkExperience'])->name('experience.delete');
+
+Route::middleware(['auth'])->group(function () {
+    // Vista de editar perfil
+    Route::get('/editar-perfil', [UserController::class, 'editarPerfil'])
+        ->name('editar-perfil');
+
+  
+});
