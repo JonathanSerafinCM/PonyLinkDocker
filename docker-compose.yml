@@ -8,19 +8,21 @@ services:
       dockerfile: backend/Dockerfile
     container_name: ponylink_backend
     environment:
+      - APP_NAME=PonyLink
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=http://45.33.39.144
+      - APP_KEY=base64:XTq5sj7BWjDCMk9Jrc2XT61MI+21Jn7lqQbTe6O6GA0=
       - DB_CONNECTION=pgsql
       - DB_HOST=db
       - DB_PORT=5432
       - DB_DATABASE=ponylink
       - DB_USERNAME=postgres
       - DB_PASSWORD=1234
-      - APP_ENV=production
-      - APP_DEBUG=false
     ports:
       - "8000:80"
     volumes:
       - ./backend:/var/www/html
-      - ./backend/storage/app/public:/var/www/html/public/storage
     networks:
       - ponylink_network
     depends_on:
