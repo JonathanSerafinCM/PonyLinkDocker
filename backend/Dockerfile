@@ -9,9 +9,11 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libpq-dev \
-    nodejs \
-    npm
+    libpq-dev
+
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
@@ -26,73 +28,30 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy Laravel files
 COPY backend/ .
 
-# Set proper permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache \
-    && chmod -R 755 /var/www/html/public
-
-# Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Build frontend assets
-WORKDIR /tmp
-RUN mkdir frontend
-COPY frontend/package.json ./frontend
-COPY frontend/package-lock.json ./frontend
-WORKDIR /tmp/frontend
-# Add npm config settings before install
-RUN npm config set fetch-retry-mintimeout 20000 \
-    && npm config set fetch-retry-maxtimeout 120000 \
-    && npm config set registry https://registry.npmjs.org/ \
-    && npm install --verbose
-COPY frontend/ ./
-RUN npm run build
-WORKDIR /var/www/html # Vuelve al directorio de trabajo
-RUN mv /tmp/frontend/dist ./public # Mueve la carpeta dist al directorio public
-RUN rm -rf /tmp/frontend # Elimina el directorio temporal
-
-# After building the application files
-WORKDIR /tmp/frontend
-
-COPY frontend/package.json ./
-COPY frontend/package-lock.json ./
-
-RUN npm config set fetch-retry-mintimeout 20000 \
-    && npm config set fetch-retry-maxtimeout 120000 \
-    && npm config set registry https://registry.npmjs.org/ \
-    && npm install --verbose
-
-COPY frontend/. ./
-
-RUN npm run build
-
-# Verify 'dist' directory exists
-RUN ls -la /tmp/frontend
-
-# Move the built files to the public directory
-WORKDIR /var/www/html
-RUN mv /tmp/frontend/dist ./public
-
-RUN rm -rf /tmp/frontend
-
-# Set permissions
+# Set directory permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 775 /var/www/html/storage \
     && chmod -R 775 /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/public
 
-# Generate application key and optimize
-WORKDIR /var/www/html
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Install NPM dependencies and build assets
+RUN npm install && \
+    npm install -D vite laravel-vite-plugin @vitejs/plugin-vue && \
+    npm run build
+
+# Create and set permissions for build directory
+RUN mkdir -p public/build && \
+    chown -R www-data:www-data public/build && \
+    chmod -R 775 public/build
+
+# Generate Laravel keys and optimize
 RUN php artisan key:generate \
     && php artisan config:cache \
-    && php artisan view:cache \
-    && touch public/index.php \
-    && chown www-data:www-data public/index.php
-
-# Remove node_modules to reduce image size (optional)
-#RUN rm -rf ./frontend/node_modules
+    && php artisan view:cache

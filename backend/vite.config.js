@@ -5,18 +5,24 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
     plugins: [
         laravel({
-            input: 'resources/js/app.js',
-            refresh: true,
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true
+            refresh: true,
+            manifest: true,
+            buildDirectory: 'build'
         }),
         vue({
             template: {
                 transformAssetUrls: {
                     base: null,
                     includeAbsolute: false,
-                },
-            },
-        }),
+                }
+            }
+        })
     ],
+    build: {
+        outDir: 'public/build',
+        rollupOptions: {
+            input: ['resources/css/app.css', 'resources/js/app.js']
+        }
+    }
 });

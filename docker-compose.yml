@@ -4,11 +4,9 @@ services:
   # Backend Laravel
   backend:
     build:
-      context: . # Cambia el contexto de construcción a .
+      context: .
       dockerfile: backend/Dockerfile
     container_name: ponylink_backend
-    depends_on:
-      - db
     environment:
       - DB_CONNECTION=pgsql
       - DB_HOST=db
@@ -23,6 +21,9 @@ services:
       # - ./frontend/dist:/var/www/html/public # Mapea la carpeta dist del frontend al directorio public del backend
     networks:
       - ponylink_network
+    depends_on:
+      - db
+    command: bash -c "php artisan migrate --force && apache2-foreground"
 
   # Frontend Vue
   frontend:
