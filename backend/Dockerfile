@@ -55,6 +55,10 @@ WORKDIR /var/www/html # Vuelve al directorio de trabajo
 RUN mv /tmp/frontend/dist ./public # Mueve la carpeta dist al directorio public
 RUN rm -rf /tmp/frontend # Elimina el directorio temporal
 
+# After building the frontend
+WORKDIR /var/www/html
+RUN mv /tmp/frontend/dist ./public
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
@@ -66,9 +70,9 @@ RUN chown -R www-data:www-data /var/www/html \
 WORKDIR /var/www/html
 RUN php artisan key:generate \
     && php artisan config:cache \
-    && php artisan view:cache
-    # Temporarily remove route caching until the route conflict is fixed
-    # && php artisan route:cache
+    && php artisan view:cache \
+    && touch public/index.php \
+    && chown www-data:www-data public/index.php
 
 # Remove node_modules to reduce image size (optional)
 #RUN rm -rf ./frontend/node_modules

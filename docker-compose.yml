@@ -20,7 +20,7 @@ services:
       - "8000:80"
     volumes:
       - ./backend:/var/www/html
-      - ./frontend/dist:/var/www/html/public # Mapea la carpeta dist del frontend al directorio public del backend
+      # - ./frontend/dist:/var/www/html/public # Mapea la carpeta dist del frontend al directorio public del backend
     networks:
       - ponylink_network
 
