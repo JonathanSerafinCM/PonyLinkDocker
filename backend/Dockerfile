@@ -55,9 +55,29 @@ WORKDIR /var/www/html # Vuelve al directorio de trabajo
 RUN mv /tmp/frontend/dist ./public # Mueve la carpeta dist al directorio public
 RUN rm -rf /tmp/frontend # Elimina el directorio temporal
 
-# After building the frontend
+# After building the application files
+WORKDIR /tmp/frontend
+
+COPY frontend/package.json ./
+COPY frontend/package-lock.json ./
+
+RUN npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm config set registry https://registry.npmjs.org/ \
+    && npm install --verbose
+
+COPY frontend/. ./
+
+RUN npm run build
+
+# Verify 'dist' directory exists
+RUN ls -la /tmp/frontend
+
+# Move the built files to the public directory
 WORKDIR /var/www/html
 RUN mv /tmp/frontend/dist ./public
+
+RUN rm -rf /tmp/frontend
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
