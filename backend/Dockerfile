@@ -57,16 +57,18 @@ RUN rm -rf /tmp/frontend # Elimina el directorio temporal
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/public
 
 # Generate application key and optimize
 WORKDIR /var/www/html
 RUN php artisan key:generate \
     && php artisan config:cache \
     && php artisan view:cache
-# Remove route caching until conflict is resolved
-# && php artisan route:cache \
+    # Temporarily remove route caching until the route conflict is fixed
+    # && php artisan route:cache
 
 # Remove node_modules to reduce image size (optional)
 #RUN rm -rf ./frontend/node_modules
